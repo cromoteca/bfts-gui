@@ -1,33 +1,36 @@
-import { ViewConfig } from '@vaadin/hilla-file-router/types.js';
-import { useSignal } from '@vaadin/hilla-react-signals';
-import { Button } from '@vaadin/react-components/Button.js';
-import { Notification } from '@vaadin/react-components/Notification.js';
-import { TextField } from '@vaadin/react-components/TextField.js';
-import { HelloWorldService } from 'Frontend/generated/endpoints.js';
-
-export const config: ViewConfig = { menu: { order: 0, icon: 'line-awesome/svg/globe-solid.svg' }, title: 'Home' };
+import { Grid, GridColumn, PasswordField, VerticalLayout } from "@vaadin/react-components";
+import Pair from "Frontend/generated/com/cromoteca/bfts/model/Pair";
+import ConnectedStorageConfiguration from "Frontend/generated/com/cromoteca/services/ConfigurationService/ConnectedStorageConfiguration";
+import LocalStorageConfiguration from "Frontend/generated/com/cromoteca/services/ConfigurationService/LocalStorageConfiguration";
+import { ConfigurationService } from "Frontend/generated/endpoints";
+import { useEffect, useState } from "react";
 
 export default function HomeView() {
-  const name = useSignal('');
+  const [storages, setStorages] = useState<Pair<LocalStorageConfiguration[], ConnectedStorageConfiguration[]>>();
+  const [password, setPassword] = useState<string>('');
 
-  return (
-    <>
-      <section className="flex p-m gap-m items-end">
-        <TextField
-          label="Your name"
-          onValueChanged={(e) => {
-            name.value = e.detail.value;
-          }}
-        />
-        <Button
-          onClick={async () => {
-            const serverResponse = await HelloWorldService.sayHello(name.value);
-            Notification.show(serverResponse);
-          }}
-        >
-          Say hello
-        </Button>
-      </section>
-    </>
-  );
+  useEffect(() => {
+    ConfigurationService.listStorages().then(setStorages);
+  }, []);
+
+  return <VerticalLayout className="p-m">
+    <PasswordField
+      label="Master Password"
+      value={password}
+      onValueChanged={({ detail: { value } }) => setPassword(value)}
+      revealButtonHidden={true}
+    />
+    Local Storages
+    <Grid items={storages?.first}>
+      <GridColumn path="name" />
+      <GridColumn path="path" />
+      <GridColumn path="port" />
+    </Grid>
+    Connected Storages
+    <Grid items={storages?.second}>
+      <GridColumn path="name" />
+      <GridColumn path="path" />
+      <GridColumn path="encryptionType" />
+    </Grid>
+  </VerticalLayout>;
 }
